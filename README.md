@@ -83,10 +83,10 @@ Before running or deploying the application, you must configure its environment 
 ```sh
 # .env file
 
-GCP_PROJECT="sandipdatta-sandbox"
+GCP_PROJECT="your-gcp-project-id"
 FUNCTION_REGION="europe-west4"
 MODEL_NAME="gemini-2.5-flash"
-DB_NAME="travel-insurance-faq"
+DB_NAME="your-firestore-database-name"
 ```
 
 **Important:** Ensure the service account running the function has the necessary IAM permissions for Vertex AI (AI Platform Editor) and Firestore (Cloud Datastore User).
