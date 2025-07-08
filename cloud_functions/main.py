@@ -56,7 +56,6 @@ def update_context_cache(cloud_event):
             contents=contents,
             system_instruction=system_instruction,
             display_name="travel-insurance-faq-cache",
-            ttl="3600s",
         ),
     )
 
