@@ -5,7 +5,7 @@
 
 This Cloud Function provides an automated mechanism for updating the Vertex AI Context Cache used by the main Travel Insurance FAQ chatbot. Its primary purpose is to ensure that the chatbot's knowledge base is always synchronized with the latest version of the master FAQ document (`travel_faq.pdf`).
 
-The function is triggered whenever a file is uploaded or modified in a specific Google Cloud Storage (GCS) bucket. It then creates a new Vertex AI Context Cache using the updated file and stores the new cache's unique ID in a central Firestore document. The main chatbot application reads this Firestore document to dynamically retrieve and use the latest active cache, ensuring that users always get answers from the most current information without requiring any manual intervention or application restarts.
+The function is triggered whenever a file is uploaded or modified in a specific Google Cloud Storage (GCS) bucket. It first retrieves the ID of the existing cache from a Firestore document and deletes it to prevent conflicts. It then creates a new Vertex AI Context Cache with a 10-year expiration time using the updated file and stores the new cache's unique ID back into the same Firestore document. The main chatbot application reads this Firestore document to dynamically retrieve and use the latest active cache, ensuring that users always get answers from the most current information without requiring any manual intervention or application restarts.
 
 ## 2. Process Flow
 
@@ -16,8 +16,8 @@ sequenceDiagram
     participant User
     participant GCS Bucket
     participant Cloud Function
-    participant Vertex AI
     participant Firestore
+    participant Vertex AI
 
     User->>GCS Bucket: Uploads/updates `travel_faq.pdf`
     GCS Bucket->>Cloud Function: Triggers function with event payload
@@ -25,12 +25,16 @@ sequenceDiagram
     Cloud Function->>Cloud Function: Checks if filename is `travel_faq.pdf`
     Note right of Cloud Function: Ignores irrelevant files
 
+    Cloud Function->>Firestore: Reads `active_cache_id` from `config/chatbot_settings`
+    Firestore-->>Cloud Function: Returns existing `active_cache_id`
+    
+    Cloud Function->>Vertex AI: Deletes old Context Cache
+    
     Cloud Function->>Cloud Function: Reads `system_instruction.txt`
-    Cloud Function->>Vertex AI: Creates new Context Cache (provides GCS URI & system instruction)
+    Cloud Function->>Vertex AI: Creates new Context Cache (10-year TTL)
     Vertex AI-->>Cloud Function: Returns new `active_cache_id`
     
-    Cloud Function->>Firestore: Connects to `travel-insurance-faq` DB
-    Cloud Function->>Firestore: Writes `active_cache_id` & `last_updated` timestamp to `config/chatbot_settings` doc
+    Cloud Function->>Firestore: Writes new `active_cache_id` & `last_updated` timestamp
 
 ```
 

@@ -31,6 +31,18 @@ def update_context_cache(cloud_event):
     genai_client = genai.Client(project=PROJECT_ID, location=LOCATION)
     firestore_client = firestore.Client(database=DB_NAME)
 
+    # --- Delete the old cache ---
+    doc_ref = firestore_client.collection('config').document('chatbot_settings')
+    doc = doc_ref.get()
+    if doc.exists:
+        old_cache_id = doc.to_dict().get('active_cache_id')
+        if old_cache_id:
+            try:
+                genai_client.caches.delete(name=old_cache_id)
+                print(f"Successfully deleted old cache: {old_cache_id}")
+            except Exception as e:
+                print(f"Error deleting cache {old_cache_id}: {e}")
+
     # Construct the absolute path to the system instruction file
     script_dir = os.path.dirname(os.path.abspath(__file__))
     instruction_path = os.path.join(script_dir, "system_instruction.txt")
@@ -50,18 +62,20 @@ def update_context_cache(cloud_event):
         )
     ]
 
+    expire_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=365 * 10)
+
     content_cache = genai_client.caches.create(
         model=MODEL_NAME,
         config=CreateCachedContentConfig(
             contents=contents,
             system_instruction=system_instruction,
             display_name="travel-insurance-faq-cache",
+            expireTime=expire_time,
         ),
     )
 
     print(f"Content cache created: {content_cache.name}")
 
-    doc_ref = firestore_client.collection('config').document('chatbot_settings')
     data = {
         'active_cache_id': content_cache.name,
         'last_updated': datetime.datetime.now(datetime.timezone.utc)
