@@ -31,6 +31,7 @@ sequenceDiagram
     Cloud Function->>Firestore: Reads `cache_id` from `context_cache/latest`
     Firestore-->>Cloud Function: Returns `old_cache_id`
     
+    Cloud Function->>Cloud Function: Reads `system_instruction.txt`
     Cloud Function->>Vertex AI: **1. Creates new Context Cache**
     Vertex AI-->>Cloud Function: Returns new `content_cache` object
     Note right of Cloud Function: Aborts on failure, leaving old cache active
@@ -60,7 +61,8 @@ This collection contains a single document with the ID `latest`. The chatbot onl
       "gcs_uri": "gs://your-bucket/travel_faq_20250708.pdf",
       "create_time": "2025-07-08T18:23:12Z",
       "expire_time": "2035-07-06T18:23:10Z",
-      "usage_metadata": { ... }
+      "usage_metadata": { ... },
+      "system_instruction": "You are a helpful and friendly AI assistant..."
     }
     ```
 

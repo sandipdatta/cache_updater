@@ -38,6 +38,13 @@ def update_context_cache(cloud_event):
     if doc.exists:
         old_cache_id = doc.to_dict().get('cache_id')
 
+    # Construct the absolute path to the system instruction file
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    instruction_path = os.path.join(script_dir, "system_instruction.txt")
+
+    with open(instruction_path, "r") as f:
+        system_instruction = f.read()
+
     contents = [
         Content(
             role="user",
@@ -58,6 +65,7 @@ def update_context_cache(cloud_event):
             model=MODEL_NAME,
             config=CreateCachedContentConfig(
                 contents=contents,
+                system_instruction=system_instruction,
                 display_name="travel-insurance-faq-cache",
                 expireTime=expire_time,
             ),
@@ -79,6 +87,7 @@ def update_context_cache(cloud_event):
         'update_time': content_cache.update_time,
         'expire_time': content_cache.expire_time,
         'gcs_uri': gcs_uri,
+        'system_instruction': system_instruction,
         'usage_metadata': {
             'total_token_count': usage_metadata.total_token_count,
             'text_count': usage_metadata.text_count,
